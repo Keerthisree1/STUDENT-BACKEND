@@ -8,11 +8,13 @@ const courseSchema = new mongoose.Schema(
       unique: true
     },
 
-    studentId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Student",   // studentModel
-      required: true
-    },
+    // Multiple students
+    studentId: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Student"
+      }
+    ],
 
     examId: {
       type: String,
@@ -24,13 +26,14 @@ const courseSchema = new mongoose.Schema(
       required: true
     },
 
+    // Optional: per-course grading logic (can be moved later)
     grades: {
       type: String,
-      enum: ["A", "B", "C", "D", "F"],
-      required: true
+      enum: ["A", "B", "C", "D", "F"]
     },
 
-    lecturerId: {
+    // One lecturer per course
+    lecturer: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Lecturer",
       required: true
