@@ -1,116 +1,112 @@
 const express = require('express');
 const router = express.Router();
 const Course = require('../models/course');
+const Student = require('../models/student');
 
-// 1. Get All Courses
+// 1️ Get All Courses
 router.get('/', async (req, res) => {
   try {
     const courses = await Course.find()
-      .populate('studentId')   
-      .populate('lecturerId'); 
+      .populate('student')
+      .populate('lecturer');
 
     res.status(200).json({
       success: true,
       count: courses.length,
-      data: courses
+      data: courses,
     });
   } catch (err) {
     res.status(500).json({
       success: false,
-      error: 'Server Error'
+      error: 'Server Error',
     });
   }
 });
 
-// 2. Get Course by ID
+// 2️ Get Course by ID
 router.get('/:id', async (req, res) => {
   try {
     const course = await Course.findById(req.params.id)
-      .populate('studentId')   
-      .populate('lecturerId'); 
+      .populate('student')
+      .populate('lecturer');
 
     if (!course) {
       return res.status(404).json({
         success: false,
-        error: 'Course not found'
+        error: 'Course not found',
       });
     }
 
     res.status(200).json({
       success: true,
-      data: course
-    });
-  } catch (err) {
-    if (err.kind === 'ObjectId') {
-      return res.status(400).json({
-        success: false,
-        error: 'Invalid ID format'
-      });
-    }
-    res.status(500).json({
-      success: false,
-      error: 'Server Error'
-    });
-  }
-});
-
-// 3. Create Course
-router.post('/', async (req, res) => {
-  try {
-    // req.body MUST contain studentId
-    const course = await Course.create(req.body);
-    res.status(201).json({
-      success: true,
-      data: course
+      data: course,
     });
   } catch (err) {
     res.status(400).json({
       success: false,
-      error: err.message
+      error: 'Invalid ID',
     });
   }
 });
 
-// 4. Update Course
+// 3️ Create Course  
+router.post('/', async (req, res) => {
+  try {
+    const { student } = req.body;
+
+    // 1. Create course
+    const course = await Course.create(req.body);
+
+    // 2. Push course ID into student.courses[]
+    await Student.findByIdAndUpdate(
+      student,
+      { $push: { courses: course._id } },
+      { new: true }
+    );
+
+    res.status(201).json({
+      success: true,
+      data: course,
+    });
+  } catch (err) {
+    res.status(400).json({
+      success: false,
+      error: err.message,
+    });
+  }
+});
+
+// 4️ Update Course
 router.put('/:id', async (req, res) => {
   try {
     const course = await Course.findByIdAndUpdate(
       req.params.id,
       req.body,
-      {
-        new: true,
-        runValidators: true
-      }
+      { new: true, runValidators: true }
     )
-      .populate('studentId')   
-      .populate('lecturerId'); 
+      .populate('student')
+      .populate('lecturer');
 
     if (!course) {
       return res.status(404).json({
         success: false,
-        error: 'Course not found'
-      });
-    }
-    res.status(200).json({
-      success: true,
-      data: course
-    });
-  } catch (err) {
-    if (err.kind === 'ObjectId') {
-      return res.status(400).json({
-        success: false,
-        error: 'Invalid ID format'
+        error: 'Course not found',
       });
     }
 
+    res.status(200).json({
+      success: true,
+      data: course,
+    });
+  } catch (err) {
     res.status(400).json({
       success: false,
-      error: err.message
+      error: err.message,
     });
   }
 });
 
-// 5. Delete Course
+// 5️ Delete Course 
 router.delete('/:id', async (req, res) => {
   try {
     const course = await Course.findByIdAndDelete(req.params.id);
@@ -118,24 +114,23 @@ router.delete('/:id', async (req, res) => {
     if (!course) {
       return res.status(404).json({
         success: false,
-        error: 'Course not found'
+        error: 'Course not found',
       });
     }
 
+    // remove from student.courses[]
+    await Student.findByIdAndUpdate(course.student, {
+      $pull: { courses: course._id },
+    });
+
     res.status(200).json({
       success: true,
-      message: 'Course deleted successfully'
+      message: 'Course deleted successfully',
     });
   } catch (err) {
-    if (err.kind === 'ObjectId') {
-      return res.status(400).json({
-        success: false,
-        error: 'Invalid ID format'
-      });
-    }
-    res.status(500).json({
+    res.status(400).json({
       success: false,
-      error: 'Server Error'
+      error: err.message,
     });
   }
 });

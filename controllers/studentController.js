@@ -3,7 +3,8 @@ const Student = require('../models/student');
 // GET all students
 exports.getStudents = async (req, res) => {
   try {
-    const students = await Student.find();
+    const students = await Student.find()
+          .populate("courses");
     res.status(200).json(students);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -13,7 +14,8 @@ exports.getStudents = async (req, res) => {
 // GET student by ID
 exports.getStudentById = async (req, res) => {
   try {
-    const student = await Student.findById(req.params.id);
+    const student = await Student.findById(req.params.id)
+        .populate("courses");
     if (!student) {
       return res.status(404).json({ message: 'Student not found' });
     }

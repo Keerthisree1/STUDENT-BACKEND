@@ -5,8 +5,8 @@ const Student = require('../models/student');
 exports.getCourses = async (req, res) => {
   try {
     const courses = await Course.find()
-      .populate('studentId')    
-      .populate('lecturerId');  
+      // .populate('studentId')    
+      // .populate('lecturerId');  
 
     res.status(200).json(courses);
   } catch (err) {
@@ -17,12 +17,32 @@ exports.getCourses = async (req, res) => {
 // ADD course
 exports.createCourse = async (req, res) => {
   try {
-    // req.body MUST contain studentId
-    const course = new Course(req.body);
-    const savedCourse = await course.save();
-    res.status(201).json(savedCourse);
-  } catch (err) {
-    res.status(400).json({ message: err.message });
+    const course = await Course.create(req.body);
+
+    const updatedStudent = await Student.findByIdAndUpdate(
+      req.body.student,
+      { $push: { courses: course._id } },
+      { new: true }
+    );
+
+    
+    if (!updatedStudent) {
+      return res.status(404).json({
+        success: false,
+        message: "Student not found while linking course"
+      });
+    }
+
+    res.status(201).json({
+      success: true,
+      data: course,
+      linkedStudent: updatedStudent
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
   }
 };
 
@@ -34,6 +54,10 @@ exports.deleteCourse = async (req, res) => {
     if (!course) {
       return res.status(404).json({ message: 'Course not found' });
     }
+    await Student.findByIdAndUpdate(
+      course.student,
+      { $pull: { courses: course._id } }
+    );
 
     res.status(200).json({ message: 'Course deleted successfully' });
   } catch (err) {

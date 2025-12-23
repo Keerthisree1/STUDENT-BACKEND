@@ -8,18 +8,14 @@ const courseSchema = new mongoose.Schema(
       unique: true
     },
 
-    // Multiple students
-    studentId: [
+    
+    student: 
       {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "Student"
-      }
-    ],
-
-    examId: {
-      type: String,
-      required: true
-    },
+        ref: "Student",
+        required: true
+      },
+    
 
     examName: {
       type: String,

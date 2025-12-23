@@ -8,8 +8,14 @@ const StudentSchema = new mongoose.Schema({
         required: [true, 'Please add a name'],
         trim: true,
     },
+    courses: [
+        {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Course"
+        }
+    ],
     
-    studentId: {
+    student: {
         type: String, 
         required: [true, 'Please add a student ID'],
         unique: true,
